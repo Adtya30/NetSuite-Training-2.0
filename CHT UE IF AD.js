@@ -26,15 +26,8 @@ function(record,search) {
     		var createdFrom = newRecord.getValue({
     	        fieldId: 'createdfrom'
     	    });
-    		log.debug('createdFrom',createdFrom);
+    		log.debug('createdFrom',createdFrom);   		
     		
-//    		Load the Sales Order
-	        var salesOrder = record.load({
-	        	type: record.Type.SALES_ORDER,
-	        	id: createdFrom
-	        });
-	        log.debug('salesOrder',salesOrder);
-	        
 //	        Get the lineCount of item
 			var item = newRecord.getLineCount({
     			sublistId: 'item'
@@ -48,7 +41,7 @@ function(record,search) {
     	            fieldId: 'item',
     	            line: count
     			});
-    			
+    		log.debug('itemName',itemName);
     			
 //	        Create Saved Search for item fullfillment
     		var itemfulfillmentSearchObj = search.create({
@@ -59,47 +52,37 @@ function(record,search) {
     			      "AND", 
     			      ["createdfrom","anyof",createdFrom], 
     			      "AND", 
-    			      ["mainline","is","T"], 
-    			      "AND", 
     			      ["item","anyof",itemName]
     			   ],
     			   columns:
     			   [
-    			      search.createColumn({name: "tranid", label: "IF No"}),
+    			      search.createColumn({name: "tranid"}),
     			     
     			   ]
     			});
     			var searchResultCount = itemfulfillmentSearchObj.runPaged().count;
     			log.debug("itemfulfillmentSearchObj result count",searchResultCount);
     			
-    			var itemFullfillmentNumber = '';
+    			
+    			var itemFullfillment = '';
     			itemfulfillmentSearchObj.run().each(function(result){
     				
-    			var itemFullfillment = result.getValue('tranid');
+    			itemFullfillment += result.getValue('tranid') + '/';
     			log.debug("itemFullfillment",itemFullfillment);
-    			itemFullfillmentNumber += itemFullfillment + '/';
     			
+    			
+//    			Set Item fulfillment number in Item Fulfillment field
+    			newRecord.setSublistValue({
+    				sublistId: 'item',
+    				fieldId: 'custcol_item_fullfillment_no_ad',
+    				line: count,
+    				value: itemFullfillment
+    			});
     			   // .run().each has a limit of 4,000 results
     			   return true;
     			});
 
-    			/*
-    			itemfulfillmentSearchObj.id="customsearch1683017034567";
-    			itemfulfillmentSearchObj.title="Item fullfillment AD (copy)";
-    			var newSearchId = itemfulfillmentSearchObj.save();
-    			*/
-    			  
-//    			Set Item fulfillment number in IF field
-        		for(var lineCount = 0;lineCount < item; lineCount++){
-        			newRecord.setSublistValue({
-        				sublistId: 'item',
-        				fieldId: 'custcol_item_fullfillment_no_ad',
-        				line: lineCount,
-        				value: itemFullfillmentNumber.slice(0,-1) // Remove the last '/' character from the concatenated string
-        			});
-        		}
-    		}
-	        
+    		}	        
     	}catch(e){
     		log.error('Error in before load function :',e);
     	}
@@ -133,8 +116,8 @@ function(record,search) {
 
     return {
         beforeLoad: beforeLoad,
-        beforeSubmit: beforeSubmit,
-        afterSubmit: afterSubmit
+//        beforeSubmit: beforeSubmit,
+//        afterSubmit: afterSubmit
     };
     
 });
